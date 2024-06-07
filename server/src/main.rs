@@ -1,3 +1,5 @@
+mod request_handling;
+use core::panic;
 use std::{
     error::Error,
     io::{Read, Write},
@@ -5,7 +7,9 @@ use std::{
     thread::{self, JoinHandle},
 };
 
-fn main() -> Result<(), Box<dyn Error + 'static>> {
+pub type ErrorAlias = Box<dyn Error + 'static>;
+
+fn main() -> Result<(), ErrorAlias> {
     let listener = TcpListener::bind("127.0.0.1:42069")?;
     let mut handles: Vec<JoinHandle<()>> = Vec::new();
 
@@ -29,13 +33,19 @@ fn main() -> Result<(), Box<dyn Error + 'static>> {
 }
 
 fn handle_stream(mut stream: TcpStream) {
-    let mut buf = [0; 1000];
+    let mut buf = [0; 2048];
     loop {
-        stream.read(&mut buf).unwrap();
+        let size = stream.read(&mut buf).unwrap();
+        let request = std::str::from_utf8(&buf).unwrap();
 
-        let request = String::from_utf8_lossy(&buf);
+        let parsed_request = request_handling::HttpRequest::parse_request(request, size).unwrap();
+        if parsed_request.body.is_empty() {
+            //todo: fix this shit
+            continue;
+        }
 
-        println!("client request: {}", request);
-        stream.write("Hello World".as_bytes()).unwrap();
+        println!("{:?}", parsed_request);
+        let game_req = request_handling::GameRequest::from_request_body(0, &parsed_request.body).unwrap();
+        println!("{}", game_req.to_string());
     }
 }
