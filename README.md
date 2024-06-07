@@ -12,3 +12,6 @@
 ## Step 3
 - Formalize communication interface
 - Combine
+
+## Sources
+- https://github.com/langhai/http-client-c

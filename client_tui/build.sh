@@ -2,4 +2,4 @@
 
 set -xe
 
-gcc -o bin/pong_client_tui src/*.c -Iinclude -Wall -Werror -pedantic
+gcc -o bin/pong_client_tui src/*.c -Iinclude -lncurses -lm -Wall -Werror -pedantic
