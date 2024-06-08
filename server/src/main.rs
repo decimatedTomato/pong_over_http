@@ -1,8 +1,8 @@
 mod request_handling;
-use core::panic;
+pub mod game;
 use std::{
     error::Error,
-    io::{Read, Write},
+    io::Read,
     net::{TcpListener, TcpStream},
     thread::{self, JoinHandle},
 };

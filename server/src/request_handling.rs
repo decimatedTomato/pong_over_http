@@ -1,6 +1,6 @@
 use std::error::Error;
 use serde::{Deserialize, Serialize};
-use crate::ErrorAlias;
+use crate::{game::{GameState, Vec2}, ErrorAlias};
 
 #[derive(Debug)]
 pub struct HttpRequest {
@@ -54,8 +54,9 @@ impl HttpRequest {
 
 #[derive(Serialize, Deserialize)]
 enum RequestType {
-    Up,
-    Down,
+    Neutral = 0,
+    Up = 1,
+    Down = 2,
 }
 
 impl ToString for RequestType {
@@ -63,6 +64,7 @@ impl ToString for RequestType {
          match self {
             RequestType::Up => String::from("Up"),
             RequestType::Down => String::from("Down"),
+            RequestType::Neutral => String::from("Neutral"),
         }
     }
 }
@@ -70,15 +72,11 @@ impl ToString for RequestType {
 pub struct GameRequest {
     player_num: usize,
     request_type: RequestType,
-    multiplier: f32,
 }
-
 #[derive(Serialize, Deserialize)]
 struct ParsedRequest {
     request_type: RequestType,
-    multiplier: f32,
 }
-
 impl GameRequest {
     pub fn from_request_body(player_num: usize, request_body: &String) -> Result<Self, ErrorAlias> {
         println!("{request_body}");
@@ -86,13 +84,29 @@ impl GameRequest {
         Ok(Self {
             player_num,
             request_type: parsed_request.request_type,
-            multiplier: parsed_request.multiplier,
         })
     } 
 }
-
 impl ToString for GameRequest {
     fn to_string(&self) -> String {
-        return format!("Player Number: {}, Request Type: {}, Multiplier: {}", self.player_num, self.request_type.to_string(), self.multiplier);
+        return format!("Player Number: {}, Request Type: {}", self.player_num, self.request_type.to_string());
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GameResponse {
+    p1_pos: Vec2,
+    p2_pos: Vec2,
+    ball_pos: Vec2,
+    current_score: [u32; 2],
+}
+impl GameResponse {
+    pub fn new(game_state: &GameState) -> Self {
+        Self {
+            p1_pos: game_state.p1_pos.clone(),
+            p2_pos: game_state.p2_pos.clone(),
+            ball_pos: game_state.ball_pos.clone(),
+            current_score: game_state.current_score.into(),
+        }
     }
 }
