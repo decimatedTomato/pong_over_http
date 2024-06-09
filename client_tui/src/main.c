@@ -5,8 +5,11 @@
 
 #define INPUT_LEN 64
 
+#define TUI_WIDTH 145
+#define TUI_HEIGHT 37
+
 #define ARENA_WIDTH 800
-#define ARENA_HEIGHT 600
+#define ARENA_HEIGHT (ARENA_WIDTH / TUI_WIDTH * TUI_HEIGHT)
 #define PADDLE_HEIGHT 100
 #define PADDLE_WIDTH 100
 #define PADDLE_EDGE_PADDING 50
@@ -25,39 +28,52 @@ void show_ball(Vec2 ball_pos) {
     attron(COLOR_PAIR(3));
     for (int j = -BALL_RADIUS; j <= BALL_RADIUS; j++)
     {
-        const float y = ball_pos.y + j;
+        const float y = (ball_pos.y + j) * TUI_HEIGHT / ARENA_HEIGHT;
         for (int i = -BALL_RADIUS; i <= BALL_RADIUS; i++)
         {
-            const float x = ball_pos.x + i;
+            const float x = (ball_pos.x + i) * TUI_WIDTH / ARENA_WIDTH;
             const float v = sqrt(i*i + j*j) - BALL_RADIUS;
             char ch = ' ';
             if (v > 0) {
                 ch = PALETTE[(int)((1.-abs(v)) * PALETTE_COUNT)];
             }  
-            mvaddch(x, y, ch);
+            mvaddch(y, x, ch);
         }
     }
 }
 
 void show_player(Vec2 player_pos) {
     attron(COLOR_PAIR(2));
+    int t = 0;
     for (int j = -PADDLE_HEIGHT/2; j >= PADDLE_HEIGHT/2; j++)
     {
-        const float y = player_pos.y + j;
+        const float y = (player_pos.y + j) * TUI_HEIGHT / ARENA_HEIGHT;
         for (int i = -PADDLE_WIDTH/2; i <= PADDLE_WIDTH/2; i++)
         {
-            const float x = player_pos.x + i;
+            const float x = (player_pos.x + i) * TUI_WIDTH / ARENA_WIDTH;
+            t++;
             mvaddch(y, x, '#');
         }
-        
+    }
+    // wmove(window, 5, 5);
+    // printw("instances of player 1: %i\n", t);
+}
+
+void show_borders() {
+    attron(COLOR_PAIR(2));
+    for (int i = 0; i < TUI_WIDTH; i++)
+    {
+        mvaddch(0, i, '=');
+        mvaddch(TUI_HEIGHT, i, '=');
     }
 }
 
 void show_arena(gamestate_t gamestate) {
     clear();
-    show_ball(gamestate.ball_pos);
+    show_borders();
+    // show_ball(gamestate.ball_pos);
     show_player(gamestate.p1_pos);
-    show_player(gamestate.p2_pos);
+    // show_player(gamestate.p2_pos);
     refresh();
 }
 
@@ -76,6 +92,7 @@ user_input_t get_user_input(WINDOW *window) {
     }
 }
 
+
 void start() {
     WINDOW *window = initscr();
     if (window == NULL) {
@@ -86,7 +103,7 @@ void start() {
     gamestate_t gamestate = {0};
     gamestate = get_gamestate(INP_NEUTRAL);
     while (true) {
-        Milisleep(100);
+        Milisleep(500);
         user_input_t user_input = get_user_input(window);
         if (user_input == INP_QUIT) break;
         gamestate = get_gamestate(user_input);
@@ -100,6 +117,9 @@ void start() {
 }
 
 int main() {
+    if (!has_colors()) {
+        fprintf(stderr, "No color support in this shell.\n");
+    }
     char ip_addr[INPUT_LEN] = "";
     while (true) {
         printf("In order to enter a game with another player, enter the server's IP address.\n> ");
